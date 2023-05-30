@@ -37,7 +37,7 @@ version = 0.1
 
 # (list) Application requirements
 # comma separated e.g. requirements = sqlite3,kivy
-requirements = python3,kivy,kivymd==0.104.2,pillow,psycopg2,android,tflite-runtime,numpy,matplotlib,pandas,twilio,requests,urllib3,charset_normalizer,chardet,idna
+requirements = python3,kivy,kivymd==0.104.2,pillow,android,tflite-runtime,numpy
 
 
 # (str) Custom source folders for requirements

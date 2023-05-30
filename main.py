@@ -1,11 +1,13 @@
 import tensorflow as tf
+#import tflite_runtime as tflite
+
 import numpy as np
 import json 
 
-from kivy.utils import platform
-#from keras.models import load_model
+from keras.models import load_model
 
 from kivymd.app import MDApp
+
 from kivy.uix.screenmanager import ScreenManager, Screen
 
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -17,6 +19,8 @@ from kivy.lang.builder import Builder
 from kivy.core.window import Window
 from kivy.metrics import dp
 
+import psycopg2
+model = load_model('mobilenet-v2.hdf5')
 # screen resolution: 320, 568
 Window.size = (568,320)
 
@@ -159,18 +163,14 @@ class CameraScreen(Screen):
 
     def preprocess(self, filepath):
     
-        new_img = tf.keras.utils.load_img(filepath, target_size=(100, 100))
+        new_img = tf.keras.utils.load_img(filepath, target_size=(224, 224))
         img = tf.keras.utils.img_to_array(new_img)
         img = np.expand_dims(img, axis=0)
         img = img/255.0
 
         self.model_prediction(img)
 
-    '''
-        #function uses keras_model h5 file to make preidction
-        model = 'Fruits-CNN_small'
-
-        def model_prediction(self, img):
+    def model_prediction(self, img):
 
         y_prob = model.predict(img) #returns numpy array of class probabilities
         y_classes = y_prob.argmax(axis=1)
@@ -179,43 +179,13 @@ class CameraScreen(Screen):
         label_prob = y_prob[0][img_label_index] * 100 
         label_prob = round(label_prob, 2)
         
-        with open('class_labels.json') as read_file:
+        with open('labels.json') as read_file:
             class_dict = json.load(read_file)
             labels = class_dict["class_labels"]
         
         pred_label = labels[img_label_index]
         
-        self.ids.prediction_label.text = "Prediction: " + pred_label + " " + str(label_prob) + "%" '''
-    def model_prediction(self,img):
-        # Load TFLite model and allocate tensors.
-        interpreter = tf.lite.Interpreter(model_path="cnn_fruits.tflite") #cnn_fruits.tflite
-        interpreter.allocate_tensors()
-
-        # Get input and output tensors.
-        input_details = interpreter.get_input_details()
-        output_details = interpreter.get_output_details()
-
-        input_data = img
-        interpreter.set_tensor(input_details[0]['index'], input_data)
-
-        interpreter.invoke()
-
-        # The function `get_tensor()` returns a copy of the tensor data.
-        output_data = interpreter.get_tensor(output_details[0]['index'])
-        output_label = output_data.argmax(axis=1)
-        
-        prediction_index = output_label.item()     
-       
-        prediction_prob = output_data[0][prediction_index] * 100 
-        prediction_prob = round(prediction_prob, 2)
-        
-        with open('class_labels.json') as read_file:
-            class_dict = json.load(read_file)
-            labels = class_dict["class_labels"]
-        
-        prediction = labels[prediction_index]
-        
-        self.ids.prediction_label.text = "Prediction: " + prediction + " " + str(prediction_prob) + "%"
+        self.ids.prediction_label.text = "Prediction: " + pred_label + " " + str(label_prob) + "%"
 
 # Create the screen manager
 sm = ScreenManager()
@@ -225,14 +195,6 @@ sm.add_widget(CameraScreen(name='camera'))
 
 class POS(MDApp):
     def build(self):
-
-        if platform == "android":
-            from android.permissions import request_permissions, Permission
-            request_permissions([
-                Permission.CAMERA,
-                Permission.WRITE_EXTERNAL_STORAGE,
-                Permission.READ_EXTERNAL_STORAGE
-            ])
         screen = Builder.load_string(screen_helper)
         return screen
 
